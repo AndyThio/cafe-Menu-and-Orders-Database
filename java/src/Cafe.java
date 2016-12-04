@@ -207,7 +207,6 @@ public class Cafe {
 			return rs.getInt(1);
 		return -1;
 	}
-
 	/**
 	 * Method to close the physical connection if it is open.
 	 */
@@ -286,7 +285,7 @@ public class Cafe {
 									case 4: UpdateOrder(esql); break;
 									case 5: ViewOrderHistory(esql,authorisedUser); break;
 									case 6: ViewOrderStatus(esql); break;
-									case 7: UpdateUserInfo(esql); break;
+									case 7: UpdateUserInfo(esql, authorisedUser, user_type); break;
 									case 9: usermenu = false; break;
 									default : System.out.println("Unrecognized choice!"); break;
 								}//end switch
@@ -311,7 +310,7 @@ public class Cafe {
 									case 4: EmployeeUpdateOrder(esql); break;
 									case 5: ViewCurrentOrder(esql); break;
 									case 6: ViewOrderStatus(esql); break;
-									case 7: UpdateUserInfo(esql); break;
+									case 7: UpdateUserInfo(esql, authorisedUser, user_type); break;
 									case 9: usermenu = false; break;
 									default : System.out.println("Unrecognized choice!"); break;
 								}//end switch
@@ -337,7 +336,7 @@ public class Cafe {
 									case 4: EmployeeUpdateOrder(esql); break;
 									case 5: ViewCurrentOrder(esql); break;
 									case 6: ViewOrderStatus(esql); break;
-									case 7: ManagerUpdateUserInfo(esql); break;
+									case 7: ManagerUpdateUserInfo(esql,user_type); break;
 									case 8: UpdateMenu(esql); break;
 									case 9: usermenu = false; break;
 									default : System.out.println("Unrecognized choice!"); break;
@@ -510,7 +509,7 @@ public class Cafe {
 		// ...
 		try{
 			//TODO: got to fix this Error at position 55??
-			String query = String.format("Select * FROM ItemStatus WHERE orderId IN (SELECT TOP 5 orderid FROM Orders WHERE login='%s' GROUP BY login ORDER BY max(timestamp) desc;) GROUP BY login;", user);
+			String query = String.format("SELECT orderid FROM Orders WHERE login='%s' GROUP BY orderid ORDER BY max(timeStampRecieved) desc LIMIT 5;", user);
 			int result = esql.executeQueryAndPrintResult(query);
 			if(1 > result){
 				System.out.println("\tNo Order History!");
@@ -520,16 +519,86 @@ public class Cafe {
 		}
 	}//end
 
-	public static void UpdateUserInfo(Cafe esql){
+	public static void UpdateUserInfo(Cafe esql, String user, String type){
 		// Your code goes here.
 		// ...
 		// ...
+		try{
+			boolean cont = true;
+			while(cont)	{
+					System.out.println("UPDATING USER INFO");
+					System.out.println("---------");
+					System.out.println("1. Change phoneNum: ");
+					System.out.println("2. Change password: ");
+					System.out.println("3. Change favItems: ");
+					if(type.equals("Manager ")){
+						System.out.println("4. Change login: ");
+						System.out.println("5. Change type: ");
+					}
+					System.out.println("6. Exit Updating Item");
+					switch (readChoice()){
+						case 1: 
+							System.out.print("Enter New Phone Number: ");
+							String itemUpdate = in.readLine();
+							String query1 = String.format("UPDATE Users SET phoneNum='%s' WHERE login ='%s';", itemUpdate, user);
+							esql.executeUpdate(query1);
+							break;
+						case 2: 
+							System.out.print("Enter New Password: ");
+							itemUpdate = in.readLine();
+							String query = String.format("UPDATE Users SET password='%s' WHERE login ='%s';", itemUpdate, user);
+							esql.executeUpdate(query);
+							break;
+						case 3: 
+							System.out.print("Enter all of your favorite items: ");
+							itemUpdate = in.readLine();
+							query = String.format("UPDATE Users SET favItems='%s' WHERE login ='%s';", itemUpdate, user);
+							esql.executeUpdate(query);
+							break;
+						case 4: 
+							if(type.equals("Manager ")){
+								System.out.print("Enter New login: ");
+								itemUpdate = in.readLine();
+								query = String.format("UPDATE Users SET login='%s' WHERE login ='%s';", itemUpdate, user);
+								query1 = String.format("UPDATE Orders SET login='%s' WHERE login ='%s';", itemUpdate, user);
+								esql.executeUpdate(query);
+								esql.executeUpdate(query1);
+							}
+							else{
+								System.out.println("Unrecognized choice!");
+							}
+							break;
+						case 5: 
+							if(type.equals("Manager ")){
+								System.out.print("Enter New type: ");
+								itemUpdate = in.readLine();
+								query = String.format("UPDATE Users SET type='%s' WHERE login ='%s';", itemUpdate, user);
+								esql.executeUpdate(query);
+							}
+							else{
+								System.out.println("Unrecognized choice!");
+							}
+							break;
+						case 6: cont=false; break;
+						default : System.out.println("Unrecognized choice!"); break;
+				}//end switch
+			}
+		}catch(Exception e){
+			System.err.println (e.getMessage ());
+		}
 	}//end
 
-	public static void ManagerUpdateUserInfo(Cafe esql){
+	public static void ManagerUpdateUserInfo(Cafe esql, String type){
 		// Your code goes here.
 		// ...
 		// ...
+		try{
+			System.out.print("Enter User to update: ");
+			String user = in.readLine();
+			UpdateUserInfo(esql, user, type);
+		}catch(Exception e){
+			System.err.println (e.getMessage ());
+		}
 	}//end
 
 	public static void ManagerUpdateItem(Cafe esql){
