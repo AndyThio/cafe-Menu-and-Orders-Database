@@ -307,7 +307,7 @@ public class Cafe {
 									case 1: BrowseMenuName(esql); break;
 									case 2: BrowseMenuType(esql); break;
 									case 3: AddOrder(esql, authorisedUser); break;
-									case 4: EmployeeUpdateOrder(esql); break;
+									case 4: EmployeeUpdateOrder(esql, authorisedUser); break;
 									case 5: ViewCurrentOrder(esql); break;
 									case 6: ViewOrderStatus(esql); break;
 									case 7: UpdateUserInfo(esql, authorisedUser, user_type); break;
@@ -333,7 +333,7 @@ public class Cafe {
 									case 1: BrowseMenuName(esql); break;
 									case 2: BrowseMenuType(esql); break;
 									case 3: AddOrder(esql, authorisedUser); break;
-									case 4: EmployeeUpdateOrder(esql); break;
+									case 4: EmployeeUpdateOrder(esql, authorisedUser); break;
 									case 5: ViewCurrentOrder(esql); break;
 									case 6: ViewOrderStatus(esql); break;
 									case 7: ManagerUpdateUserInfo(esql,user_type); break;
@@ -537,7 +537,7 @@ public class Cafe {
 			System.out.print("Enter order ID to modify: ");
 			int orderid = Integer.parseInt(in.readLine());
 			String query = String.format("SELECT * FROM Orders WHERE login='%s' AND orderid = %d AND paid=FALSE", user, orderid);
-			int result = esql.executeQueryAndPrintResult(query);
+			int result = esql.executeQuery(query);
 			if(1 > result){
 				System.out.println("\tNo Matching Order History!");
 				return;
@@ -592,10 +592,83 @@ public class Cafe {
 		}
 	}//end
 
-	public static void EmployeeUpdateOrder(Cafe esql){
+	public static void EmployeeUpdateOrder(Cafe esql,String user){
 		// Your code goes here.
 		// ...
 		// ...
+		try{
+			System.out.print("Enter order ID to modify: ");
+			int orderid = Integer.parseInt(in.readLine());
+			String query = String.format("SELECT * FROM Orders WHERE orderid = %d", orderid);
+			int result = esql.executeQuery(query);
+			if(1 > result){
+				System.out.println("\tNo Matching Order History!");
+				return;
+			}
+			boolean cont = true;
+			while(cont)	{
+				System.out.println("Changing an Order");
+				System.out.println("---------");
+				System.out.println("1. Add Item");
+				System.out.println("2. Change comment on item");
+				System.out.println("3. Delete Item");
+				System.out.println("4. Set Item Status");
+				System.out.println("5. Set if order is paid");
+				System.out.println("6. Save and Exit");
+				switch (readChoice()){
+					case 1: 
+						System.out.print("Enter item wanted: ");
+						String itemName = in.readLine();
+						String query1 = String.format("INSERT INTO ItemStatus (orderid, itemName, lastUpdated, status, comments) VALUES (%d,'%s',NOW(),'Hasn''t Started', '');", orderid, itemName);
+						esql.executeUpdate(query1);
+						break;
+					case 2:
+						System.out.print("Enter item to change: ");
+						itemName = in.readLine();
+						System.out.print("Enter updated comment: ");
+						String comment = in.readLine();
+						query1 = String.format("UPDATE ItemStatus SET comments=%s WHERE itemName='%s' AND orderid=%d;", comment, itemName, orderid);
+						esql.executeUpdate(query1);
+						break;
+
+					case 3:
+						System.out.print("Enter item to delete: ");
+						itemName = in.readLine();
+						query1 = String.format("DELETE FROM ItemStatus WHERE itemName='%s' AND orderid=%d", itemName, orderid);
+						esql.executeUpdate(query1);
+						break;
+					case 4:
+						System.out.print("Enter item to change status: ");
+						itemName = in.readLine();
+						System.out.print("Enter updated comment: ");
+						String status = in.readLine();
+						query1 = String.format("UPDATE ItemStatus SET status=%s WHERE itemName='%s' AND orderid=%d;", status, itemName, orderid);
+						esql.executeUpdate(query1);
+						break;
+					case 5:
+						System.out.print("Is order paid? (Enter TRUE or FALSE): ");
+						itemName = in.readLine();
+						query1 = String.format("UPDATE Orders SET paid=%s WHERE orderid=%d", itemName, orderid);
+						esql.executeUpdate(query1);
+						break;
+					case 6:
+						//Save and update order's total
+						query = String.format("SELECT SUM(M.price) FROM Menu M, ItemStatus I WHERE I.orderid=%d AND M.itemName=I.itemName", orderid);
+						List<List<String> > cost = esql.executeQueryAndReturnResult(query);
+						//int dotindex = result.get(0).get(0).indexOf('.');
+						//String cost = result.get(0).get(0).substring(0,dotindex+3);
+						//System.out.println("The total cost is: " + cost + "\tOrder ID: " + orderid);
+						query1 = String.format("UPDATE Orders SET total=%s WHERE orderid=%d",cost.get(0).get(0), orderid);
+						esql.executeUpdate(query1);
+						cont = false;
+						break;
+					default : System.out.println("Unrecognized choice!"); break;
+				}
+			}
+
+		}catch(Exception e){
+			System.err.println (e.getMessage ());
+		}
 	}//end
 	
 	public static void ViewOrderHistory(Cafe esql, String user){
