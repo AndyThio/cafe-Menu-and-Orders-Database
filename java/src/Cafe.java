@@ -281,7 +281,7 @@ public class Cafe {
 								switch (readChoice()){
 									case 1: BrowseMenuName(esql); break;
 									case 2: BrowseMenuType(esql); break;
-									case 3: AddOrder(esql); break;
+									case 3: AddOrder(esql,authorisedUser); break;
 									case 4: UpdateOrder(esql); break;
 									case 5: ViewOrderHistory(esql,authorisedUser); break;
 									case 6: ViewOrderStatus(esql); break;
@@ -306,7 +306,7 @@ public class Cafe {
 								switch (readChoice()){
 									case 1: BrowseMenuName(esql); break;
 									case 2: BrowseMenuType(esql); break;
-									case 3: AddOrder(esql); break;
+									case 3: AddOrder(esql, authorisedUser); break;
 									case 4: EmployeeUpdateOrder(esql); break;
 									case 5: ViewCurrentOrder(esql); break;
 									case 6: ViewOrderStatus(esql); break;
@@ -332,7 +332,7 @@ public class Cafe {
 								switch (readChoice()){
 									case 1: BrowseMenuName(esql); break;
 									case 2: BrowseMenuType(esql); break;
-									case 3: AddOrder(esql); break;
+									case 3: AddOrder(esql, authorisedUser); break;
 									case 4: EmployeeUpdateOrder(esql); break;
 									case 5: ViewCurrentOrder(esql); break;
 									case 6: ViewOrderStatus(esql); break;
@@ -483,10 +483,48 @@ public class Cafe {
 		}
 	}//end
 
-	public static Integer AddOrder(Cafe esql){
+	public static Integer AddOrder(Cafe esql, String user){
 		// Your code goes here.
 		// ...
 		// ...
+		
+		try{
+			List< List< String> > result = esql.executeQueryAndReturnResult("SELECT MAX(orderid) FROM Orders");
+			int orderid = Integer.parseInt(result.get(0).get(0)) + 1;
+			String query = String.format("INSERT INTO Orders (orderid, login, paid, timeStampRecieved, total) VALUES (%d, '%s', FALSE, NOW(),0)", orderid, user);
+			esql.executeUpdate(query);
+
+			boolean cont = true;
+			while(cont)	{
+				System.out.println("Creating an Order");
+				System.out.println("---------");
+				System.out.println("1. Add Item");
+				System.out.println("2. Save and Exit");
+				switch (readChoice()){
+					case 1: 
+						System.out.print("Enter item wanted: ");
+						String itemName = in.readLine();
+						String query1 = String.format("INSERT INTO ItemStatus (orderid, itemName, lastUpdated, status, comments) VALUES (%d,'%s',NOW(),'Hasn''t Started', '');", orderid, itemName);
+						esql.executeUpdate(query1);
+						break;
+					case 2:
+						//TODO: Save and update order's total
+						query = String.format("SELECT SUM(M.price) FROM Menu M, ItemStatus I WHERE I.orderid=%d AND M.itemName=I.itemName", orderid);
+						result = esql.executeQueryAndReturnResult(query);
+						//int dotindex = result.get(0).get(0).indexOf('.');
+						//String cost = result.get(0).get(0).substring(0,dotindex+3);
+						//System.out.println("The total cost is: " + cost + "\tOrder ID: " + orderid);
+						query1 = String.format("UPDATE Orders SET total=%s WHERE orderid=%d",result.get(0).get(0), orderid);
+						esql.executeUpdate(query1);
+						cont = false;
+						break;
+					default : System.out.println("Unrecognized choice!"); break;
+				}
+			}
+		}catch(Exception e){
+			System.err.println (e.getMessage ());
+		}
+		
 		Integer orderid=0;
 		return orderid;
 	}//end 
@@ -495,6 +533,7 @@ public class Cafe {
 		// Your code goes here.
 		// ...
 		// ...
+		
 	}//end
 
 	public static void EmployeeUpdateOrder(Cafe esql){
@@ -509,7 +548,7 @@ public class Cafe {
 		// ...
 		try{
 			//TODO: got to fix this Error at position 55??
-			String query = String.format("SELECT orderid FROM Orders WHERE login='%s' GROUP BY orderid ORDER BY max(timeStampRecieved) desc LIMIT 5;", user);
+			String query = String.format("SELECT * FROM Orders WHERE login='%s' GROUP BY orderid ORDER BY max(timeStampRecieved) desc LIMIT 5;", user);
 			int result = esql.executeQueryAndPrintResult(query);
 			if(1 > result){
 				System.out.println("\tNo Order History!");
@@ -738,6 +777,14 @@ public class Cafe {
 		// Your code goes here.
 		// ...
 		// ...
+		try{
+			int result = esql.executeQueryAndPrintResult("SELECT * FROM Orders WHERE paid=FALSE AND timeStampRecieved >= NOW()- '1 day'::INTERVAL;");
+			if(1 > result){
+				System.out.println("\tNo Orders!");
+			}
+		}catch(Exception e){
+			System.err.println (e.getMessage ());
+		}
 	}//end
 
 	public static void Query6(Cafe esql){
