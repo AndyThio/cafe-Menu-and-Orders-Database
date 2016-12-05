@@ -511,6 +511,9 @@ public class Cafe {
 						//TODO: Save and update order's total
 						query = String.format("SELECT SUM(M.price) FROM Menu M, ItemStatus I WHERE I.orderid=%d AND M.itemName=I.itemName", orderid);
 						result = esql.executeQueryAndReturnResult(query);
+						if(result.get(0).get(0) == null){
+							result.get(0).set(0,"0");
+						}
 						//int dotindex = result.get(0).get(0).indexOf('.');
 						//String cost = result.get(0).get(0).substring(0,dotindex+3);
 						//System.out.println("The total cost is: " + cost + "\tOrder ID: " + orderid);
@@ -737,8 +740,17 @@ public class Cafe {
 							break;
 						case 5: 
 							if(type.equals("Manager ")){
-								System.out.print("Enter New type: ");
-								itemUpdate = in.readLine();
+								System.out.println("Enter New User Type");
+								System.out.println("---------");
+								System.out.println("1. Customer: ");
+								System.out.println("2. Employee: ");
+								System.out.println("3. Manager: ");
+								switch (readChoice()){
+									case 1: itemUpdate = "Customer"; break;
+									case 2: itemUpdate = "Employee"; break;
+									case 3: itemUpdate = "Manager "; break;
+									default : System.out.println("Unrecognized choice! Type changed to defult Customer");itemUpdate = "Customer"; break;
+								}
 								query = String.format("UPDATE Users SET type='%s' WHERE login ='%s';", itemUpdate, user);
 								esql.executeUpdate(query);
 							}
@@ -871,6 +883,8 @@ public class Cafe {
 						case 3:
 							System.out.print("\tEnter item to delete: ");
 							String item = in.readLine();
+							query = String.format("DELETE FROM ItemStatus WHERE itemName='%s'", item);
+							esql.executeUpdate(query);
 							query = String.format("DELETE FROM Menu WHERE itemName='%s'", item);
 							esql.executeUpdate(query);
 							break;
